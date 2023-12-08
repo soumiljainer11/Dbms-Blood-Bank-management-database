@@ -1,0 +1,38 @@
+create table Donor (
+donorID INT not null, first_name VARCHAR(50) not null, last_name VARCHAR(50) not null, address VARCHAR(60) not null, email VARCHAR(100) not null, phone VARCHAR(20) not null, dob DATE not null, blood_type VARCHAR(3) not null, Primary key(donorID)
+);
+create table Recipient (
+recipient_id INT not null, first_name VARCHAR(50) not null, last_name VARCHAR(50) not null, address VARCHAR(60) not null, email VARCHAR(100) not null, phone VARCHAR(20) not null, dob DATE not null, blood_type VARCHAR(3) not null, Primary key(recipient_id)
+);
+create table blood_donation (
+donorID INT(11) not null, blood_donated DATE not null, blood_id INT(11) not null, quantity INT not null, Primary key(blood_id), Foreign key (donorID) references
+Donor(donorID)
+);
+create table MedicalPersonal (
+empid INT not null, first_name VARCHAR(50) not null, last_name VARCHAR(50) not null,
+email VARCHAR(100) not null, gender VARCHAR(20) not null, dob DATE not null, address VARCHAR(60), Primary key(empid)
+);
+create table BloodTransaction (
+empid INT(11) not null, transaction_id INT(11) not null, recipient_id INT(11) not null, blood_type VARCHAR(50), quantity INT not null, DateOut DATE not null, bloodID INT(11) not null
+Primary key(transaction_id), Foreign key(empid) references
+MedicalPersonal(empid), Foreign key(recipient_id) references
+Recipient(recipient_id), Foreign key(blood_id) references
+Blood_donation(blood_id), );
+create view PatientSeen as select
+concat_ws(' ', m.first_name, m.last_name) as 'MedicalPersonal', concat_ws(' ', r.first_name, r.last_name) as 'Patient Name', dateOut as 'Date Seen' From MedicalPersonal m, BloodTransaction b, Recipient r
+where m.empid = b.empid AND r.recipient_id = b.recipient_id
+order by m.last_name ASC;
+create view BloodStock as select
+Donor.blood_type as 'Blood Type', sum(Blood_donation.quantity) as 'In Stock' from Blood_donation
+join Donor on Blood_donation.donorID = Donor.donorID
+where Blood_donation.blood_id
+not in (select blood_id from BloodTransaction)
+group by blood_type
+create view PatientList
+as select
+concat_ws(', ', last_name, first_name) as Name, bloodType as 'Blood Type', date_format(from_days(to_days(now())- to_days(dob)),'%y')+0 as Age, address as Address, email as Email, phone as Phone from Donor
+union
+select
+concat_ws(', ', last_name, first_name) as 'PatientName', Blood_type as 'Blood Type', date_format(from_days(to_days(now())- to_days(dob)),'%y')+0 as Age, address as Address, email as Email, phone as Phone
+from Recipient
+Order by Name
